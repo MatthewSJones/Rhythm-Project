@@ -1,9 +1,11 @@
 
 int maxFrameRate = 120;
+int canvasWidth = 650;
+int canvasHeight = 800;
 
-void setup() { 
-  size(650, 800); 
-  frameRate(maxFrameRate);
+void setup() {
+	size(canvasWidth, canvasHeight);
+	frameRate(maxFrameRate);
 } ;
 
 // load stepfile into lines array
@@ -45,9 +47,9 @@ boolean notesEnd = 0;
 // note position and display vars
 var notePos = [[[]],[[]],[[]],[[]]];
 if(scroll == "Down"){
-var receptorStart = [[50,620],[150,620],[250,620],[350,620]];	
+	var receptorStart = [[50,620],[150,620],[250,620],[350,620]];	
 } else {
-var receptorStart = [[50,180],[150,180],[250,180],[350,180]];
+	var receptorStart = [[50,180],[150,180],[250,180],[350,180]];
 }
 var receptors = [[],[],[],[]];
 float timeRead = 0;
@@ -107,6 +109,16 @@ var noteAngle = 0;
 var innerAngle = 45;
 var noteSize = 65;
 
+/** 
+ * @function drawArrow
+ * @description Draws a vector-based arrow
+ * @param {float} arrowAngle 
+ * The angle in degrees that the arrow will be pointing. Right is zero, and increases counterclockwise.
+ * @param {float} arrowSize 
+ * The height of the arrow in pixels, as well as four times the width of the arrow.
+ * @param {array} arrowCenter 
+ * The position of the center of the arrow [x,y].
+ */
 function drawArrow(arrowAngle, arrowSize, arrowCenter) {
     var m1 = 0;
 	var m2 = 0;
@@ -123,7 +135,7 @@ function drawArrow(arrowAngle, arrowSize, arrowCenter) {
     strokeWeight(1);
     if((arrowAngle+innerAngle)%90 !== 0 && (arrowAngle+90)%180 !== 0){
         arrowAngle += 0.00001;
-    }    
+    }
     m1 = (arrowCenter[0] + arrowHeight/2/tan(radians(innerAngle))*cos(radians(arrowAngle-90)) - arrowCenter[0] + arrowHeight/2*cos(radians(arrowAngle)))/(arrowCenter[1] - arrowHeight/2/tan(radians(innerAngle))*sin(radians(arrowAngle-90)) - arrowCenter[1] - arrowHeight/2*sin(radians(arrowAngle)));
     m2 = -(arrowCenter[1] + arrowHeight/2*sin(radians(arrowAngle)) + arrowWidth/2*sin(radians(arrowAngle+90)) - arrowCenter[1] + arrowHeight/2*sin(radians(arrowAngle)) - arrowWidth/2*sin(radians(arrowAngle+90)))/(arrowCenter[0] - arrowHeight/2*cos(radians(arrowAngle)) - arrowWidth/2*cos(radians(arrowAngle+90)) - arrowCenter[0] - arrowHeight/2*cos(radians(arrowAngle)) + arrowWidth/2*cos(radians(arrowAngle+90)));
     Fx = arrowCenter[0] + arrowHeight/2/tan(radians(innerAngle))*cos(radians(arrowAngle-90)) - arrowWidth*cos(radians(arrowAngle-innerAngle));
@@ -159,7 +171,23 @@ function drawArrow(arrowAngle, arrowSize, arrowCenter) {
 };
 
 
-// grab stepfile info: title, artist, offset, bpms
+/**
+ * @module Stepfile conversion 
+ * @description Converts the stepfile into note, timing, and other information
+ * @param {array} lines 
+ * The stepfile (.sm) with each element of the array being a line text from the file.
+ * @return {array} <p>**bpms**</p>
+ * - The beats per minute of a section of music and the beat at which that bpm goes into effect, in the form [[beat, bpm], ...] for each change in bpm, with the first bpm being defined at beat 0
+ * <p></p>
+ * @return {array} <p>**difficulties**</p>
+ * - The list of difficulties available within a stepfile, and the line number in lines[] at which the notes for that difficulty start, in the form [[difficulty, line number], ...].
+ * <p></p>
+ * @return {array} <p>**notes**</p>
+ * - All of the notes contained in a specified difficulty, organized so that notes[0] = the set of notes for receptor 1, and notes[i][j] = the time position relative to the start of the notes (does not factor in offset at this point).
+ */
+ 
+ // Begin stepfile conversion <p></p>
+ // Grab stepfile info: title, artist, offset, bpms
 while(lines[i].charAt(0) == "#"){
 	//console.log(lines[i]);
 	if(lines[i].substring(1,lines[i].indexOf(":")) == "TITLE"){
@@ -183,21 +211,21 @@ while(lines[i].charAt(0) == "#"){
 		for(j=0;j<bpms.length;j++){
 			for(k=0;k<2;k++){
 				bpms[j][k] = float(bpms[j][k]);
-			}		
+			}
 		}
 		
 		console.log(bpms);
-	}	
+	}
 	i++;
 }
 
 // this loop extracts difficulties in the form: ["difficulty", line number where notes start]
 do{	
-		
+
 	while(lines[i] != "#NOTES:" && i < lines.length){
 		i++;
 	}
-	
+
 	if(i+3 < lines.length){
 		i += 3;
 		
@@ -209,7 +237,6 @@ do{
 while(i < lines.length);
 
 // NOTE: lines array starts counting at zero, therefore values may seem like they are off by one
-console.log(difficulties);
 
 function getNotes(j){
 	lineNotes = [];
@@ -223,7 +250,7 @@ function getNotes(j){
 if(selectHardest){
  	selectedDifficulty = difficulties.length - 1;
  } else {
-	// user prompt goes here
+	// user prompt to select difficulty goes here
 }
 
 currentLine = difficulties[selectedDifficulty][1];
@@ -235,7 +262,7 @@ i = currentLine;
 
 // assumes #NOTES ends with a semicolon
 while(lines[i] != "," && lines[i] != ";"){
-	i ++;	
+	i ++;
 }
 
 // check if the notes have finished, if true, this is last loop
@@ -283,7 +310,7 @@ if(currentTime == 0 && linesProcessed == 0){
 	
 while(linesProcessed < notesInMeasure){
 	currentTime += secPerNote;
-	getNotes(currentLine);	
+	getNotes(currentLine);
 	
 	if(lineNotes.length != 0){
 		for(i=0; i < lineNotes.length; i++){
@@ -300,6 +327,8 @@ measureNum ++;
 // console.log(linesProcessed + " , " + currentLine + " , " + currentBpm);
 }
 while(notesEnd == 0);
+// end stepfile conversion <p></p>
+
 
 // initialize time for display loop
 millisStart = millis();
@@ -308,7 +337,7 @@ noteLocators.length = notes.length;
 
 audio.play();
 
-void draw() { 
+void draw() {
     background(255, 255, 255);
 	fill(0,0,0);
     text("Title: " + title,0,15);
@@ -317,6 +346,22 @@ void draw() {
 	text("FPS:  " + round(frameRate) + " / " + maxFrameRate, 335, 15);
 	
 	if(audio.ended == false){
+		
+		/**
+		* @module Display notes and receptors 
+		* @description Converts notes[] timing information into position information and displays it
+		* @param {array} notes 
+		* All of the notes contained in a specified difficulty, organized so that notes[0] = the set of notes for receptor 1, and notes[i][j] = the time position relative to the start of the notes (does not factor in offset at this point).
+		* @return {array} <p>**receptors**</p>
+		* - The position of each receptor, where the position of receptor (i+1) is given by receptors[i] = [x,y] (in pixels).
+		* <p></p>
+		* @return {array} <p>**notePos**</p>
+		* - The position of each note on screen, in the form notePos[receptorNumber][noteNumber] = [x,y]. Receptor and note number initialize at zero and notes are in ascending chronological order.
+		* <p></p>
+		* @return {array} <p>**noteLocators**</p>
+		* - The position of the earliest note on screen in notes[], or, the array index for each earliest note for each receptor, and noteLocators[receptorNumber] = #
+		*/
+		
 		// begin note and receptor display loop
 		millisCurrent = millis();
 		timeRead = timeInitial + (millisCurrent - millisStart)/1000;
@@ -326,7 +371,7 @@ void draw() {
 			
 			receptors[i][0] = receptorStart[i][0] + 11*sin(timeRead + i/3.14);
 			receptors[i][1] = receptorStart[i][1];
-		
+			
 			if(scroll == "Down"){
 				minTime = timeRead - (minNoteY - receptors[i][1])*speed/10000;
 				maxTime = timeRead - (maxNoteY - receptors[i][1])*speed/10000;
@@ -396,6 +441,18 @@ void draw() {
 			}
 			
 		}
+		
+		/**
+		* @module Controller visualization
+		* @param {array} notePos 
+		* The position of each note on screen, in the form notePos[receptorNumber][noteNumber] = [x,y]. Receptor and note number initialize at zero and notes are in ascending chronological order.
+		* @param {array} receptors
+		* The position of each receptor, where the position of receptor (i+1) is given by receptors[i] = [x,y] (in pixels).
+		* @param {array} noteLocators
+		* The position of the earliest note on screen in notes[], or, the array index for each earliest note for each receptor, and noteLocators[receptorNumber] = #.
+		* @return {array} <p>**hit**</p>
+		* - The old and new position of the hit circle, where hit[0] = [x_old, y_old] and hit[1] = [x_new, y_new]
+		*/
 		
 		// begin controller visualization loop
 		if(scroll == "Down" && showController === true){
